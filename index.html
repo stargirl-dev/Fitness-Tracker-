@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Fitness">
+<title>My Fitness Tracker</title>
+<style>
+:root{--bg:#F7F5F0;--surface:#FFFFFF;--surface2:#F0EDE6;--text:#1A1814;--text2:#6B6760;--text3:#A8A49E;--border:rgba(26,24,20,0.1);--border2:rgba(26,24,20,0.18);--accent:#2D5A3D;--accent-light:#E8F0EB;--blue:#1A3A5C;--blue-light:#E6EDF5;--amber:#8B6914;--amber-light:#F5EFE0;--red:#7A2020;--red-light:#F5E8E8;--purple:#3D2070;--purple-light:#EDE8F5;--radius:12px;--radius-sm:8px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;line-height:1.6;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.app-header{background:var(--surface);border-bottom:1px solid var(--border);padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.app-header h1{font-size:19px;font-weight:600;letter-spacing:-0.02em}
+.header-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.streak-badge{background:var(--accent-light);color:var(--accent);font-size:12px;font-weight:600;padding:4px 12px;border-radius:100px}
+.tabs{display:flex;gap:2px;padding:0.625rem 0.875rem;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:7px 16px;border-radius:100px;border:none;background:transparent;cursor:pointer;font-size:13px;font-family:-apple-system,sans-serif;color:var(--text2);white-space:nowrap;font-weight:500}
+.tab.active{background:var(--text);color:var(--bg)}
+.content{padding:1rem 0.875rem;max-width:600px;margin:0 auto}
+.section{display:none}.section.active{display:block}
+.card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:1.125rem;margin-bottom:0.875rem}
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:0.875rem}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem 0.875rem}
+.metric-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px;font-weight:600}
+.metric-value{font-size:22px;font-weight:600;color:var(--text);line-height:1}
+.section-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.75rem}
+.workout-title{font-size:19px;font-weight:600;line-height:1.2;letter-spacing:-0.01em}
+.workout-sub{font-size:12px;color:var(--text3);margin-top:3px}
+.workout-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.125rem}
+.pill{font-size:11px;font-weight:700;padding:4px 11px;border-radius:100px;letter-spacing:0.02em}
+.pill-a{background:var(--blue-light);color:var(--blue)}
+.pill-b{background:var(--accent-light);color:var(--accent)}
+.pill-rest{background:var(--surface2);color:var(--text3)}
+.pill-done{background:var(--accent-light);color:var(--accent)}
+.pill-skipped{background:var(--red-light);color:var(--red)}
+.pill-walk{background:var(--amber-light);color:var(--amber)}
+.pill-sat{background:var(--purple-light);color:var(--purple)}
+.pill-exam{background:var(--amber-light);color:var(--amber)}
+.pill-phase{background:var(--purple-light);color:var(--purple);font-size:10px;padding:3px 8px}
+.exercise-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.exercise-row:last-child{border-bottom:none}
+.ex-check{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--border2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s}
+.ex-check.checked{background:var(--accent);border-color:var(--accent)}
+.ex-check.checked::after{content:'';display:block;width:5px;height:9px;border:2px solid white;border-top:none;border-left:none;transform:rotate(45deg) translateY(-1px)}
+.ex-name{flex:1;font-size:14px}.ex-name.done{color:var(--text3);text-decoration:line-through}
+.ex-detail{font-size:11px;color:var(--text3);margin-top:1px}
+.ex-right{text-align:right;flex-shrink:0}
+.ex-sets{font-size:12px;color:var(--text3)}
+.btn-row{display:flex;gap:8px;margin-top:1.125rem;flex-wrap:wrap}
+button{padding:9px 16px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:transparent;cursor:pointer;font-size:13px;font-family:-apple-system,sans-serif;color:var(--text);font-weight:500;-webkit-appearance:none}
+button:active{opacity:0.7}
+.btn-primary{background:var(--text);color:var(--bg);border-color:var(--text)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-ghost{border-color:transparent;color:var(--text2)}
+.busy-tip{border-left:3px solid var(--blue);border-radius:0 var(--radius) var(--radius) 0;background:var(--blue-light)}
+.tip-title{font-size:13px;font-weight:600;color:var(--blue);margin-bottom:4px}
+.tip-body{font-size:13px;color:var(--blue);opacity:0.8}
+.day-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.day-row:last-child{border-bottom:none}
+.day-name{font-size:14px;font-weight:500}.day-type{font-size:12px;color:var(--text3);margin-top:2px}
+.week-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.week-nav-title{font-size:15px;font-weight:600}
+.progress-bar-wrap{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin:6px 0 2px}
+.progress-bar{height:100%;background:var(--accent);border-radius:3px;transition:width 0.4s ease}
+.heatmap-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.heatmap-grid{display:grid;grid-template-rows:repeat(7,13px);grid-auto-flow:column;grid-auto-columns:13px;gap:3px;width:max-content;margin-bottom:0.75rem}
+.hm-cell{width:13px;height:13px;border-radius:3px;background:var(--surface2)}
+.hm-cell.done2{background:#1D9E75}.hm-cell.skipped{background:#F09595}.hm-cell.exam{background:#FAC775}.hm-cell.today{outline:2px solid var(--text);outline-offset:1px}
+.hm-legend{display:flex;gap:10px;flex-wrap:wrap}
+.hm-legend-item{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text3)}
+.hm-dot{width:10px;height:10px;border-radius:2px}
+.note-row{padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.note-row:last-child{border-bottom:none}
+.note-date{color:var(--text3);margin-right:6px}
+.milestone-row{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.milestone-row:last-child{border-bottom:none}
+.m-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.m-dot.upcoming{background:var(--border2)}.m-dot.current{background:var(--blue)}.m-dot.achieved{background:var(--accent)}.m-dot.goal{background:var(--amber)}
+.milestone-label{font-size:14px;font-weight:500}.milestone-date{font-size:12px;color:var(--text3)}
+.phase-bar{padding:8px 12px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;margin-bottom:6px}
+.phase-card{border-radius:var(--radius);padding:1rem;margin-bottom:0.75rem;border:1px solid var(--border)}
+.phase-card.active-phase{border-color:var(--accent);background:var(--accent-light)}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;align-items:flex-end;justify-content:center;padding:0}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;padding:1.5rem 1.25rem;width:100%;max-height:85vh;overflow-y:auto;padding-bottom:calc(1.5rem + env(safe-area-inset-bottom))}
+.modal h3{font-size:17px;font-weight:600;margin-bottom:1.25rem}
+.input-row{margin-bottom:0.875rem}
+.input-row label{font-size:12px;color:var(--text3);display:block;margin-bottom:5px;font-weight:600}
+input[type=text],input[type=number],input[type=date],select,textarea{width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-size:16px;font-family:-apple-system,sans-serif;-webkit-appearance:none}
+textarea{resize:vertical;min-height:70px}
+.flex-end{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem}
+.toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(80px);background:var(--text);color:var(--bg);padding:10px 20px;border-radius:100px;font-size:13px;z-index:300;transition:transform 0.3s ease;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.empty-state{font-size:13px;color:var(--text3);font-style:italic}
+.saturday-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:0.75rem}
+.sat-option{padding:12px 8px;border-radius:var(--radius-sm);border:1px solid var(--border);cursor:pointer;text-align:center;font-size:12px;font-weight:500;background:var(--surface)}
+.sat-option:active{opacity:0.7}
+.sat-option.selected{border-color:var(--purple);background:var(--purple-light);color:var(--purple)}
+.sat-icon{font-size:22px;display:block;margin-bottom:5px}
+.progress-tip{font-size:12px;color:var(--text3);margin-top:6px;font-style:italic}
+.log-btn{font-size:12px;padding:4px 10px;border-radius:100px;border:1px solid var(--border2);background:transparent;cursor:pointer;color:var(--text2)}
+</style>
+</head>
+<body>
+<div class="app-header">
+  <div><h1>My Fitness Tracker</h1><div class="header-sub" id="phase-label">Phase 1 · Build the habit</div></div>
+  <div class="streak-badge" id="header-streak">0 wks</div>
+</div>
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('today')">Today</button>
+  <button class="tab" onclick="switchTab('schedule')">Schedule</button>
+  <button class="tab" onclick="switchTab('progress')">Progress</button>
+  <button class="tab" onclick="switchTab('roadmap')">Roadmap</button>
+</div>
+<div class="content">
+
+<div id="tab-today" class="section active">
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">This week</div><div class="metric-value" id="m-week">0/3</div></div>
+    <div class="metric"><div class="metric-label">Streak</div><div class="metric-value" id="m-streak">0</div></div>
+    <div class="metric"><div class="metric-label">Total</div><div class="metric-value" id="m-total">0</div></div>
+  </div>
+  <div class="card" id="today-card"></div>
+  <div class="card busy-tip"><div class="tip-title">Busy? Do this minimum</div><div class="tip-body" id="minimum-text">12 min is enough to keep momentum</div></div>
+</div>
+
+<div id="tab-schedule" class="section">
+  <div class="card">
+    <div class="week-nav">
+      <div><div class="week-nav-title" id="week-label">Week 1</div><div style="font-size:12px;color:var(--text3);margin-top:2px;" id="week-ab-label">Sun · Wed · Fri</div></div>
+      <div style="display:flex;gap:6px;"><button class="btn-sm" onclick="prevWeek()">←</button><button class="btn-sm btn-primary" onclick="goToday()">Today</button><button class="btn-sm" onclick="nextWeek()">→</button></div>
+    </div>
+    <div id="week-days"></div>
+  </div>
+  <div class="card" id="schedule-workout-a"></div>
+  <div class="card" id="schedule-workout-b"></div>
+</div>
+
+<div id="tab-progress" class="section">
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">Done</div><div class="metric-value" id="p-total">0</div></div>
+    <div class="metric"><div class="metric-label">Rate</div><div class="metric-value" id="p-rate">—</div></div>
+    <div class="metric"><div class="metric-label">Best</div><div class="metric-value" id="p-best">0 wks</div></div>
+  </div>
+  <div class="card">
+    <div class="section-label" style="margin-bottom:0.875rem;">Activity — last 16 weeks</div>
+    <div class="heatmap-wrap"><div class="heatmap-grid" id="heatmap"></div></div>
+    <div class="hm-legend">
+      <div class="hm-legend-item"><div class="hm-dot" style="background:var(--surface2);border:1px solid var(--border);"></div>rest</div>
+      <div class="hm-legend-item"><div class="hm-dot" style="background:#1D9E75;"></div>done</div>
+      <div class="hm-legend-item"><div class="hm-dot" style="background:#F09595;"></div>skipped</div>
+      <div class="hm-legend-item"><div class="hm-dot" style="background:#FAC775;"></div>exam wk</div>
+    </div>
+  </div>
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <div class="section-label" style="margin:0;">Progress notes</div>
+      <button class="btn-sm" onclick="openModal('progress-modal')">+ Add</button>
+    </div>
+    <div id="notes-list"><div class="empty-state">No notes yet. Log how you feel, strength gains, energy levels.</div></div>
+  </div>
+</div>
+
+<div id="tab-roadmap" class="section">
+  <div class="card">
+    <div class="section-label">Overall goal progress</div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span style="color:var(--text2);">April → December 2025</span><span style="font-weight:600;" id="goal-pct">0%</span></div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="goal-bar" style="width:0%"></div></div>
+    <div style="font-size:12px;color:var(--text3);margin-top:6px;" id="goal-sub">0 of ~108 workouts logged</div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">Training phases</div>
+    <div class="phase-card" id="phase1-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div style="font-size:14px;font-weight:600;">Phase 1 · Apr–Jun</div>
+        <span class="pill pill-phase">Build the habit</span>
+      </div>
+      <div style="font-size:13px;color:var(--text2);">3x12 reps · 60 sec rest · Master form · Consistency is everything</div>
+    </div>
+    <div class="phase-card" id="phase2-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div style="font-size:14px;font-weight:600;">Phase 2 · Jul–Sep</div>
+        <span class="pill pill-phase">Increase intensity</span>
+      </div>
+      <div style="font-size:13px;color:var(--text2);">Slow tempo · Pause reps · 4 sets · 45 sec rest · July check-in</div>
+    </div>
+    <div class="phase-card" id="phase3-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div style="font-size:14px;font-weight:600;">Phase 3 · Oct–Dec</div>
+        <span class="pill pill-phase">Peak shape</span>
+      </div>
+      <div style="font-size:13px;color:var(--text2);">Supersets · Single leg variations · 30 sec rest · Maximum intensity</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">Milestones</div>
+    <div id="milestones-list"></div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+      <div class="section-label" style="margin:0;">Exam / busy weeks</div>
+      <button class="btn-sm" onclick="openModal('exam-modal')">+ Add</button>
+    </div>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:0.875rem;">Flag busy weeks to plan minimum workouts.</div>
+    <div id="exam-list"><div class="empty-state">None added yet.</div></div>
+  </div>
+</div>
+
+</div>
+
+<!-- LOG PAST DAY MODAL -->
+<div class="modal-bg" id="past-log-modal">
+  <div class="modal">
+    <h3 id="past-log-title">Log workout</h3>
+    <div class="input-row">
+      <label>Status</label>
+      <select id="past-status">
+        <option value="done">Completed ✓</option>
+        <option value="skipped">Skipped</option>
+      </select>
+    </div>
+    <div class="input-row"><label>How did it feel?</label><select id="past-feeling"><option>Great — full energy</option><option>Good — completed it all</option><option>Okay — skipped 1–2 exercises</option><option>Tough — showed up anyway</option></select></div>
+    <div class="input-row"><label>Notes (optional)</label><textarea id="past-notes" placeholder="Energy, soreness, strength gains..."></textarea></div>
+    <div class="flex-end"><button onclick="closeModal('past-log-modal')">Cancel</button><button class="btn-primary" onclick="savePastLog()">Save</button></div>
+  </div>
+</div>
+
+<!-- LOG MODAL -->
+<div class="modal-bg" id="log-modal">
+  <div class="modal">
+    <h3>Log today's workout</h3>
+    <div class="input-row"><label>How did it feel?</label><select id="log-feeling"><option>Great — full energy</option><option>Good — completed it all</option><option>Okay — skipped 1–2 exercises</option><option>Tough — showed up anyway</option></select></div>
+    <div class="input-row"><label>Strength gain?</label><input type="text" id="log-weight" placeholder="e.g. Rows felt easier, added a set"></div>
+    <div class="input-row"><label>Notes</label><textarea id="log-notes" placeholder="Energy, soreness, how you felt..."></textarea></div>
+    <div class="flex-end"><button onclick="closeModal('log-modal')">Cancel</button><button class="btn-primary" onclick="saveLog()">Save</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="progress-modal">
+  <div class="modal">
+    <h3>Add progress note</h3>
+    <div class="input-row"><label>Date</label><input type="text" id="prog-date" placeholder="e.g. May 1"></div>
+    <div class="input-row"><label>Note</label><input type="text" id="prog-note" placeholder="e.g. Clothes fitting looser, energy is better"></div>
+    <div class="flex-end"><button onclick="closeModal('progress-modal')">Cancel</button><button class="btn-primary" onclick="saveProgress()">Save</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="exam-modal">
+  <div class="modal">
+    <h3>Add exam / busy week</h3>
+    <div class="input-row"><label>Label</label><input type="text" id="exam-label" placeholder="e.g. Midterms, Work deadline"></div>
+    <div class="input-row"><label>Week number (1–36, from Apr 13)</label><input type="number" id="exam-week" min="1" max="36" value="8"></div>
+    <div class="flex-end"><button onclick="closeModal('exam-modal')">Cancel</button><button class="btn-primary" onclick="saveExam()">Save</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const START=new Date('2025-04-13');
+
+// PHASE DEFINITIONS
+const PHASES={
+  1:{name:'Phase 1',label:'Build the habit',dateEnd:'2025-07-01',restSec:60,sets:'3',reps:'12',tip:'Focus on form and showing up consistently. Every workout counts.'},
+  2:{name:'Phase 2',label:'Increase intensity',dateEnd:'2025-10-01',restSec:45,sets:'4',reps:'12–15',tip:'Slow the tempo down — 3 counts up, 3 counts down. Add pause reps at the hardest point.'},
+  3:{name:'Phase 3',label:'Peak shape',dateEnd:'2026-01-01',restSec:30,sets:'4',reps:'15',tip:'Supersets and single leg variations. No rest between paired exercises.'}
+};
+
+function getCurrentPhase(){
+  const now=new Date();
+  const p1End=new Date('2025-07-01');
+  const p2End=new Date('2025-10-01');
+  if(now.getTime()<p1End.getTime())return 1;
+  if(now.getTime()<p2End.getTime())return 2;
+  return 3;
+}
+
+// WORKOUT DEFINITIONS BY PHASE
+function getWorkouts(phase){
+  const p=PHASES[phase];
+  const sets=p.sets;const reps=p.reps;
+  const WA_base=[
+    {name:'Goblet squat',sets:`${sets}x${reps}`,detail:'15lb KB · slow descent'},
+    {name:'Romanian deadlift',sets:`${sets}x${reps}`,detail:'10lb DBs · hinge at hips'},
+    {name:'Reverse lunges (both legs)',sets:'2x10 each',detail:'10lb DBs · both legs every time'},
+    {name:'Floor chest press',sets:`${sets}x${reps}`,detail:'10lb DBs · pause at bottom'},
+    {name:'Overhead shoulder press',sets:`${sets}x${reps}`,detail:'8–10lb DBs · standing'},
+    {name:'Tricep overhead extension',sets:'2x12',detail:'10lb DB'},
+  ];
+  const WB_base=[
+    {name:'KB deadlift',sets:`${sets}x${reps}`,detail:'15lb KB · flat back'},
+    {name:'Single arm supported row',sets:`${sets}x${reps}`,detail:'5–8lb DB · hand on chair for support'},
+    {name:'Loop band external rotation',sets:'3x15',detail:'Loop band · elbows tucked at sides'},
+    {name:'Chest fly',sets:'2x12',detail:'10lb DBs · slight bend in elbows'},
+    {name:'Bicep curl',sets:`${sets}x${reps}`,detail:'10lb DBs · slow lower'},
+    {name:'Band glute kickback',sets:'2x15 each',detail:'Loop band · squeeze at top'},
+  ];
+  if(phase===2){
+    WA_base.forEach(e=>{e.detail+=' · 3 sec lower';});
+    WB_base.forEach(e=>{e.detail+=' · pause at top';});
+  }
+  if(phase===3){
+    WA_base[0].detail='15lb KB · SUPERSET with RDL';
+    WA_base[1].detail='10lb DBs · SUPERSET with goblet squat';
+    WA_base[3].detail='10lb DBs · SUPERSET with shoulder press';
+    WA_base[4].detail='8–10lb DBs · SUPERSET with chest press';
+    WB_base[0].detail='15lb KB · try single leg';
+    WB_base[4].detail='10lb DBs · SUPERSET with rows';
+    WB_base[1].detail='5–8lb DB · SUPERSET with bicep curl';
+  }
+  return{A:WA_base,B:WB_base};
+}
+
+const MIN={
+  A:'RDL 3x10 · Goblet squat 3x12 · Chest press 2x10 — 12 min',
+  B:'KB deadlift 3x10 · Rows 3x10 · Bicep curl 2x10 — 12 min'
+};
+
+const MILESTONES=[
+  {label:'First 4 weeks consistent',date:'Early May',type:'upcoming'},
+  {label:'Halfway check-in — July goal',date:'July 1',type:'upcoming'},
+  {label:'Phase 2 begins — increase intensity',date:'July 1',type:'upcoming'},
+  {label:'3x/week fully locked in',date:'~Month 2',type:'upcoming'},
+  {label:'Phase 3 begins — peak shape',date:'October 1',type:'upcoming'},
+  {label:'Best shape — December goal',date:'December 2025',type:'goal'},
+];
+
+const DAY_SCHED={0:'workout',1:'walk',2:'rest',3:'workout',4:'rest',5:'workout',6:'saturday'};
+const DAY_FULL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+// STATE
+let S={workouts:{},satActivity:{},notes:[],exams:[],checks:{},weekOffset:0};
+
+function loadState(){
+  try{
+    // Try loading from fit_v4 first, then fall back to fit_v3 to recover old data
+    let s=localStorage.getItem('fit_v4');
+    if(!s)s=localStorage.getItem('fit_v3');
+    if(!s)s=localStorage.getItem('fit_v2');
+    if(!s)s=localStorage.getItem('fitness_tracker_v2');
+    if(s){const parsed=JSON.parse(s);S={...S,...parsed};}
+  }catch(e){console.log('Load error:',e);}
+}
+
+function save(){
+  try{
+    localStorage.setItem('fit_v4',JSON.stringify(S));
+  }catch(e){console.log('Save error:',e);}
+}
+
+loadState();
+
+function toKey(d){
+  const yr=d.getFullYear();
+  const mo=String(d.getMonth()+1).padStart(2,'0');
+  const dy=String(d.getDate()).padStart(2,'0');
+  return`${yr}-${mo}-${dy}`;
+}
+function todayKey(){return toKey(new Date());}
+function getWeekNum(d){return Math.floor((d-START)/86400000/7)+1;}
+function getSessionNum(dow){return dow===0?1:dow===3?2:dow===5?3:null;}
+function getWType(weekNum,session){const o=(weekNum-1)*3+(session-1);return o%2===0?'A':'B';}
+function getWTypeForDate(d){const w=getWeekNum(d);const s=getSessionNum(d.getDay());if(!s)return null;return getWType(w,s);}
+function isExamWeek(d){return S.exams.some(e=>{const es=new Date(START);es.setDate(START.getDate()+(e.week-1)*7);const em=new Date(es);const dw=es.getDay();em.setDate(es.getDate()-(dw===0?6:dw-1));const diff=Math.floor((d-em)/86400000);return diff>=0&&diff<7;});}
+function getWeekWorkouts(){const d=new Date();const dow=d.getDay();const mon=new Date(d);mon.setDate(d.getDate()-(dow===0?6:dow-1));let c=0;for(let i=0;i<7;i++){const day=new Date(mon);day.setDate(mon.getDate()+i);if(S.workouts[toKey(day)]==='done')c++;}return c;}
+function calcStreak(){return Math.floor(Object.values(S.workouts).filter(v=>v==='done').length/3);}
+
+function updatePhaseUI(){
+  const phase=getCurrentPhase();
+  const p=PHASES[phase];
+  document.getElementById('phase-label').textContent=`${p.name} · ${p.label}`;
+  [1,2,3].forEach(i=>{
+    const card=document.getElementById(`phase${i}-card`);
+    if(card){card.classList.toggle('active-phase',i===phase);}
+  });
+}
+
+function renderToday(){
+  const d=new Date();const dow=d.getDay();const sched=DAY_SCHED[dow];const wt=getWTypeForDate(d);const key=todayKey();const status=S.workouts[key];
+  const wd=getWeekWorkouts();const streak=calcStreak();const total=Object.values(S.workouts).filter(v=>v==='done').length;
+  const phase=getCurrentPhase();const workouts=getWorkouts(phase);
+
+  document.getElementById('m-week').textContent=wd+'/3';
+  document.getElementById('m-streak').textContent=streak;
+  document.getElementById('m-total').textContent=total;
+  document.getElementById('header-streak').textContent=streak+' wks';
+  updatePhaseUI();
+
+  const card=document.getElementById('today-card');
+
+  if(sched==='workout'&&wt){
+    document.getElementById('minimum-text').textContent=MIN[wt];
+    const exs=workouts[wt];
+    let exHtml=exs.map((ex,i)=>{
+      const ck='t'+i;const ch=S.checks[ck]||false;
+      return`<div class="exercise-row">
+        <div class="ex-check${ch?' checked':''}" onclick="toggleCheck('t${i}',this)"></div>
+        <div style="flex:1;">
+          <div class="ex-name${ch?' done':''}">${ex.name}</div>
+          <div class="ex-detail">${ex.detail}</div>
+        </div>
+        <div class="ex-sets">${ex.sets}</div>
+      </div>`;
+    }).join('');
+    const phaseTip=`<div style="margin-top:0.875rem;padding:8px 12px;background:var(--surface2);border-radius:var(--radius-sm);font-size:12px;color:var(--text2);">💡 ${PHASES[phase].tip}</div>`;
+    const restInfo=`<div style="font-size:12px;color:var(--text3);margin-top:6px;">Rest ${PHASES[phase].restSec} sec between sets</div>`;
+    let act=status==='done'
+      ?`<div style="margin-top:1rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><span class="pill pill-done">✓ Completed</span><button class="btn-sm" onclick="openModal('log-modal')">Add notes</button></div>`
+      :status==='skipped'
+      ?`<div style="margin-top:1rem;"><span class="pill pill-skipped">Skipped today</span></div>`
+      :`<div class="btn-row"><button class="btn-primary" onclick="completeWorkout()">Mark complete</button><button onclick="openModal('log-modal')">Log notes</button><button onclick="skipWorkout()">Skip</button></div>`;
+    card.innerHTML=`
+      <div class="workout-header">
+        <div>
+          <div class="workout-title">Workout ${wt} — today</div>
+          <div class="workout-sub">${wt==='A'?'Lower body + push':'Upper body + hinge'} · ~30 min</div>
+        </div>
+        <span class="pill pill-${wt.toLowerCase()}">${wt}</span>
+      </div>
+      ${exHtml}${restInfo}${phaseTip}${act}`;
+  } else if(sched==='saturday'){
+    const sat=S.satActivity[key]||null;
+    card.innerHTML=`<div class="workout-header"><div><div class="workout-title">Saturday — active recovery</div><div class="workout-sub">Pick what feels right</div></div><span class="pill pill-sat">SAT</span></div>
+    <div class="saturday-options">
+      <div class="sat-option${sat==='pilates'?' selected':''}" onclick="logSat('pilates',this)"><span class="sat-icon">🧘</span>Pilates</div>
+      <div class="sat-option${sat==='dance'?' selected':''}" onclick="logSat('dance',this)"><span class="sat-icon">💃</span>Dance</div>
+      <div class="sat-option${sat==='sculpt'?' selected':''}" onclick="logSat('sculpt',this)"><span class="sat-icon">🏋️</span>Sculpt</div>
+    </div>
+    ${sat?`<div style="margin-top:0.875rem;"><span class="pill pill-done">✓ ${sat.charAt(0).toUpperCase()+sat.slice(1)} logged</span></div>`:''}`;
+    document.getElementById('minimum-text').textContent='Even 20 min of Pilates or a walk keeps the momentum going.';
+  } else if(sched==='walk'){
+    const walked=S.workouts[key]==='walk';
+    card.innerHTML=`<div class="workout-header"><div><div class="workout-title">Monday — walk or rest</div><div class="workout-sub">30 min walk if you can</div></div><span class="pill pill-walk">REST</span></div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:1rem;">A 30 min walk on Mondays keeps your metabolism active heading into the week.</div>
+    <div class="btn-row">${walked?'<span class="pill pill-done">✓ Walk logged</span>':'<button class="btn-primary" onclick="logWalk()">Log 30-min walk</button>'}</div>`;
+    document.getElementById('minimum-text').textContent='Rest day — hydrate well and eat enough protein.';
+  } else {
+    card.innerHTML=`<div class="workout-header"><div><div class="workout-title">${DAY_FULL[dow]} — full rest</div><div class="workout-sub">Recovery day · no workout needed</div></div><span class="pill pill-rest">REST</span></div>
+    <div style="font-size:13px;color:var(--text2);">Rest days are part of the plan. Your muscles grow and repair today. Focus on sleep, protein, and hydration.</div>`;
+    document.getElementById('minimum-text').textContent='Rest day — your body is recovering and getting stronger.';
+  }
+}
+
+function toggleCheck(key,el){S.checks[key]=!S.checks[key];el.classList.toggle('checked');const nameEl=el.nextElementSibling.querySelector('.ex-name');if(nameEl)nameEl.classList.toggle('done');save();}
+function completeWorkout(){S.workouts[todayKey()]='done';S.checks={};save();renderToday();showToast('Workout complete! 💪');}
+function skipWorkout(){S.workouts[todayKey()]='skipped';save();renderToday();showToast('Skipped logged.');}
+function logWalk(){S.workouts[todayKey()]='walk';save();renderToday();showToast('Walk logged!');}
+function logSat(type,el){S.satActivity[todayKey()]=type;document.querySelectorAll('.sat-option').forEach(o=>o.classList.remove('selected'));el.classList.add('selected');save();renderToday();showToast(type.charAt(0).toUpperCase()+type.slice(1)+' logged!');}
+
+// PAST DAY LOGGING
+let pendingPastKey=null;
+let pendingPastDate=null;
+
+function openPastLog(key,dateStr){
+  pendingPastKey=key;
+  pendingPastDate=dateStr;
+  document.getElementById('past-log-title').textContent=`Log ${dateStr}`;
+  const existing=S.workouts[key];
+  document.getElementById('past-status').value=existing==='skipped'?'skipped':'done';
+  openModal('past-log-modal');
+}
+
+function savePastLog(){
+  if(!pendingPastKey)return;
+  const status=document.getElementById('past-status').value;
+  const feeling=document.getElementById('past-feeling').value;
+  const notes=document.getElementById('past-notes').value;
+  S.workouts[pendingPastKey]=status;
+  if(feeling||notes){
+    const parts=[pendingPastDate,feeling];
+    if(notes)parts.push(notes);
+    S.notes.unshift({date:pendingPastDate,note:parts.filter(Boolean).join(' · ')});
+  }
+  document.getElementById('past-notes').value='';
+  save();closeModal('past-log-modal');renderSchedule();renderToday();
+  showToast(status==='done'?'Workout logged! ✓':'Skipped logged.');
+}
+
+function renderSchedule(){
+  const phase=getCurrentPhase();
+  const workouts=getWorkouts(phase);
+  const d=new Date();const dow=d.getDay();
+  const mon=new Date(d);mon.setDate(d.getDate()-(dow===0?6:dow-1)+S.weekOffset*7);
+  const wn=Math.max(1,getWeekNum(mon));
+  document.getElementById('week-label').textContent='Week '+wn;
+  const t=[getWType(wn,1),getWType(wn,2),getWType(wn,3)];
+  document.getElementById('week-ab-label').textContent=`Sun: ${t[0]} · Wed: ${t[1]} · Fri: ${t[2]} · ${PHASES[phase].name}`;
+
+  const container=document.getElementById('week-days');container.innerHTML='';
+  for(let i=0;i<7;i++){
+    const day=new Date(mon);day.setDate(mon.getDate()+i);const dw=day.getDay();const k=toKey(day);
+    const isToday=k===todayKey();const isFuture=day>new Date();
+    const status=S.workouts[k];const sat=S.satActivity[k];const sched=DAY_SCHED[dw];const wt=getWTypeForDate(day);const exam=isExamWeek(day);
+    let pill='';let logBtn='';
+    if(sched==='workout'){
+      if(status==='done'){pill=`<span class="pill pill-done">done</span>`;}
+      else if(status==='skipped'){pill=`<span class="pill pill-skipped">skipped</span>`;}
+      else if(exam){pill=`<span class="pill pill-exam">exam wk</span>`;}
+      else{pill=`<span class="pill pill-${(wt||'a').toLowerCase()}">${wt||'A'}</span>`;}
+      if(!isFuture){
+        const btnLabel=status?'edit':'log';
+        const dateStr=day.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+        logBtn=`<button class="log-btn" onclick="openPastLog('${k}','${dateStr}')">${btnLabel}</button>`;
+      }
+    } else if(sched==='saturday'){
+      if(sat)pill=`<span class="pill pill-done">${sat}</span>`;
+      else pill=`<span class="pill pill-sat">active</span>`;
+    } else if(sched==='walk'){
+      if(status==='walk')pill=`<span class="pill pill-walk">walked</span>`;
+      else pill=`<span class="pill pill-walk">walk/rest</span>`;
+    } else {
+      pill=`<span class="pill pill-rest">full rest</span>`;
+    }
+    const typeLabel=sched==='workout'?`Strength · Workout ${wt}`:sched==='saturday'?'Active recovery':sched==='walk'?'Walk or rest':'Full rest day';
+    const row=document.createElement('div');row.className='day-row';
+    row.innerHTML=`<div><div class="day-name">${DAY_FULL[dw]}${isToday?' <span style="font-size:11px;color:var(--text3);">(today)</span>':''}</div><div class="day-type">${typeLabel}</div></div><div style="display:flex;align-items:center;gap:6px;">${logBtn}${pill}</div>`;
+    container.appendChild(row);
+  }
+
+  // Render workout cards for schedule tab
+  const cardA=document.getElementById('schedule-workout-a');
+  const cardB=document.getElementById('schedule-workout-b');
+  const wA=workouts.A;const wB=workouts.B;
+  cardA.innerHTML=`<div class="section-label">Workout A — Lower body + push · ${PHASES[phase].sets}x${PHASES[phase].reps}</div>${wA.map(ex=>`<div class="exercise-row"><div style="flex:1;"><div class="ex-name">${ex.name}</div><div class="ex-detail">${ex.detail}</div></div><div class="ex-sets">${ex.sets}</div></div>`).join('')}<div class="progress-tip">Rest ${PHASES[phase].restSec} sec between sets · ${PHASES[phase].tip}</div>`;
+  cardB.innerHTML=`<div class="section-label">Workout B — Upper body + hinge · ${PHASES[phase].sets}x${PHASES[phase].reps}</div>${wB.map(ex=>`<div class="exercise-row"><div style="flex:1;"><div class="ex-name">${ex.name}</div><div class="ex-detail">${ex.detail}</div></div><div class="ex-sets">${ex.sets}</div></div>`).join('')}<div class="progress-tip">Rest ${PHASES[phase].restSec} sec between sets · ${PHASES[phase].tip}</div>`;
+}
+
+function prevWeek(){S.weekOffset--;renderSchedule();}
+function nextWeek(){S.weekOffset++;renderSchedule();}
+function goToday(){S.weekOffset=0;renderSchedule();}
+
+function renderProgress(){
+  const done=Object.values(S.workouts).filter(v=>v==='done').length;
+  const sched=Object.keys(S.workouts).length;
+  document.getElementById('p-total').textContent=done;
+  document.getElementById('p-rate').textContent=sched?Math.round(done/sched*100)+'%':'—';
+  document.getElementById('p-best').textContent=calcStreak()+' wks';
+  const grid=document.getElementById('heatmap');grid.innerHTML='';
+  const weeks=16;const td=new Date();const start=new Date(td);start.setDate(td.getDate()-weeks*7);start.setDate(start.getDate()-start.getDay());
+  for(let dw=0;dw<7;dw++){for(let w=0;w<weeks;w++){const date=new Date(start);date.setDate(start.getDate()+w*7+dw);const k=toKey(date);const st=S.workouts[k];const exam=isExamWeek(date);const isT=k===todayKey();const cell=document.createElement('div');let cls='hm-cell';if(exam)cls+=' exam';else if(st==='done')cls+=' done2';else if(st==='skipped')cls+=' skipped';if(isT)cls+=' today';cell.className=cls;grid.appendChild(cell);}}
+  const nl=document.getElementById('notes-list');
+  nl.innerHTML=S.notes.length?S.notes.map(n=>`<div class="note-row"><span class="note-date">${n.date}</span>${n.note}</div>`).join(''):'<div class="empty-state">No notes yet. Log how you feel, strength gains, energy levels.</div>';
+}
+
+function renderRoadmap(){
+  const done=Object.values(S.workouts).filter(v=>v==='done').length;const target=108;const pct=Math.min(100,Math.round(done/target*100));
+  document.getElementById('goal-pct').textContent=pct+'%';document.getElementById('goal-bar').style.width=pct+'%';document.getElementById('goal-sub').textContent=done+' of ~'+target+' workouts logged';
+  updatePhaseUI();
+  const now=new Date();
+  document.getElementById('milestones-list').innerHTML=MILESTONES.map(m=>{
+    const isPast=m.date==='Early May'&&now>new Date('2025-05-15');
+    const type=isPast?'achieved':m.type;
+    return`<div class="milestone-row"><div class="m-dot ${type}"></div><div><div class="milestone-label">${m.label}</div><div class="milestone-date">${m.date}</div></div></div>`;
+  }).join('');
+  const el=document.getElementById('exam-list');
+  el.innerHTML=S.exams.length?S.exams.map((e,i)=>`<div class="day-row"><div><div class="day-name">${e.label}</div><div class="day-type">Week ${e.week}</div></div><div style="display:flex;align-items:center;gap:8px;"><span class="pill pill-exam">wk ${e.week}</span><button class="btn-sm" onclick="removeExam(${i})">remove</button></div></div>`).join(''):'<div class="empty-state">None added yet.</div>';
+}
+
+function removeExam(i){S.exams.splice(i,1);save();renderRoadmap();}
+
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelector(`[onclick="switchTab('${t}')"]`).classList.add('active');
+  document.getElementById('tab-'+t).classList.add('active');
+  if(t==='progress')renderProgress();
+  if(t==='roadmap')renderRoadmap();
+  if(t==='schedule')renderSchedule();
+}
+
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+function saveLog(){
+  const feeling=document.getElementById('log-feeling').value;
+  const weight=document.getElementById('log-weight').value;
+  const notes=document.getElementById('log-notes').value;
+  const dateStr=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  const parts=[feeling];if(weight)parts.push(weight);if(notes)parts.push(notes);
+  S.notes.unshift({date:dateStr,note:parts.filter(Boolean).join(' · ')});
+  document.getElementById('log-weight').value='';document.getElementById('log-notes').value='';
+  save();closeModal('log-modal');showToast('Notes saved!');
+}
+
+function saveProgress(){
+  const date=document.getElementById('prog-date').value||new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  const note=document.getElementById('prog-note').value;
+  if(note){S.notes.unshift({date,note});document.getElementById('prog-note').value='';document.getElementById('prog-date').value='';save();closeModal('progress-modal');renderProgress();showToast('Progress note saved!');}
+}
+
+function saveExam(){
+  const label=document.getElementById('exam-label').value||'Busy week';const week=parseInt(document.getElementById('exam-week').value)||8;
+  S.exams.push({label,week});document.getElementById('exam-label').value='';save();closeModal('exam-modal');renderRoadmap();showToast('Exam week added!');
+}
+
+let toastTimer;
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2500);}
+document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+
+renderToday();
+renderSchedule();
+</script>
+</body>
+</html>
